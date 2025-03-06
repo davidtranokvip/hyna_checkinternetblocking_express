@@ -10,7 +10,7 @@ const port = process.env.PORT || 8000;
 const proxies = [
   {
     name: 'VINA 4G HÀ NỘI',
-    host: '171.242.234.93',
+    host: '171.242.232.39',
     port: 54809,
     auth: {
       username: 'fhfp6nsw',
@@ -19,7 +19,7 @@ const proxies = [
   },
   {
     name: 'MOBIFONE 4G HÀ NỘI',
-    host: '116.96.93.236',
+    host: '171.224.22.68',
     port: 45658,
     auth: {
       username: 'eskxd_cyred',
@@ -37,7 +37,7 @@ const proxies = [
   },
   {
     name: 'VIETTEL INTERNET HÀ NỘI',
-    host: '117.5.208.61',
+    host: '117.1.95.39',
     port: 45577,
     auth: {
       username: 'coerz_cyred',
@@ -46,7 +46,7 @@ const proxies = [
   },
   {
     name: 'FPT INTERNET HÀ NỘI',
-    host: '1.54.45.28',
+    host: '1.54.45.218',
     port: 40229,
     auth: {
       username: 'tcqbx_cyred',
