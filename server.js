@@ -46,7 +46,7 @@ const proxies = [
   },
   {
     name: 'FPT INTERNET HÀ NỘI',
-    host: '1.54.45.218',
+    host: '183.80.164.132',
     port: 40229,
     auth: {
       username: 'tcqbx_cyred',
