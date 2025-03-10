@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const https = require('https');
 const url = require('url');
 const tunnel = require('tunnel');
@@ -7,53 +8,9 @@ const tunnel = require('tunnel');
 const app = express();
 app.use(cors());
 const port = process.env.PORT || 8000;
-const proxies = [
-  {
-    name: 'VINA 4G HÀ NỘI',
-    host: '171.242.232.39',
-    port: 54809,
-    auth: {
-      username: 'fhfp6nsw',
-      password: 'tekkdx9l'
-    }
-  },
-  {
-    name: 'MOBIFONE 4G HÀ NỘI',
-    host: '171.224.22.68',
-    port: 45658,
-    auth: {
-      username: 'eskxd_cyred',
-      password: 'YIWcnJVV'
-    }
-  },
-  {
-    name: 'VNPT INTERNET',
-    host: '14.188.192.39',
-    port: 20046,
-    auth: {
-      username: 'BKIrOX',
-      password: 'DKBKyd'
-    }
-  },
-  {
-    name: 'VIETTEL INTERNET HÀ NỘI',
-    host: '117.1.95.39',
-    port: 45577,
-    auth: {
-      username: 'coerz_cyred',
-      password: '8fXOXC71'
-    }
-  },
-  {
-    name: 'FPT INTERNET HÀ NỘI',
-    host: '183.80.164.132',
-    port: 40229,
-    auth: {
-      username: 'tcqbx_cyred',
-      password: 'KJyplyb6'
-    }
-  }
-];
+
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzQzNDc3OWI5MDJhNjJlMThhMmI4MjkiLCJpYXQiOjE3NDE0NDUyOTgsImV4cCI6MTc0OTIyMTI5OH0.5GISe3Le9vWCPikwFvevNf4eVxyJJdsGg0ZZSt-xd2c';
+
 /**
  * Hàm checkWebsite sử dụng proxyConfig để kiểm tra domain
  * @param {Object} proxyConfig - Cấu hình proxy (bao gồm host, port, auth và name)
@@ -95,7 +52,7 @@ function checkWebsite(proxyConfig, targetUrl) {
         },
         agent: agent,
         timeout: 10000,
-        rejectUnauthorized: false  // Lưu ý: chỉ dùng cho testing, không nên dùng ở production
+        rejectUnauthorized: false
       };
 
       console.log(`Đang kiểm tra ${targetUrl} qua proxy ${proxyConfig.host}:${proxyConfig.port} (${proxyConfig.name})`);
@@ -151,15 +108,77 @@ function checkWebsite(proxyConfig, targetUrl) {
   }
 }
 
+// hiện tại nhà cung cấp chua  cung cấp name nên gắn như này trước
+function assignProxyName(proxy) {
+  if (proxy.name) return proxy.name;
+
+  if (proxy.portHttp == 45658) {
+    return 'MOBIFONE 4G';
+  } else if (proxy.portHttp == 40229) {
+    return 'FPT INTERNET';
+  } else if (proxy.portHttp == 45577) {
+    return 'VIETTEL INTERNET';
+  } else if (proxy.portHttp == 54809) {
+    return 'VINA 4G';
+  }
+}
+
+// fetch data api từ nhà cung cấp
+async function fetchProxiesFromAPI(token) {
+  try {
+    const response = await axios.get('https://api.zingproxy.com/proxy/get-all-active-proxies', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error(`Failed to fetch proxies: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error fetching proxies:', error.message);
+    return null;
+  }
+}
+
 app.get('/site', async (req, res) => {
   const domain = req.query.domain;
   if (!domain) {
     return res.status(400).json({ error: 'Missing domain parameter' });
   }
 
+  const proxiesFromAPI = await fetchProxiesFromAPI(token);
+
+  if (!proxiesFromAPI) {
+    return res.status(500).json({ error: 'Failed to fetch proxies from API' });
+  }
+
+  const newProxy = {
+    name: 'VNPT INTERNET',
+    ip: '14.188.187.203',
+    portHttp: '36512',
+    username: 'gAcrPn',
+    password: 'UCzGWB'
+  };
+
+  proxiesFromAPI.proxiesDancuVietnam.push(newProxy);
+
+  const formattedProxies = proxiesFromAPI.proxiesDancuVietnam.map(proxy => ({
+    name: assignProxyName(proxy),
+    host: proxy.ip,
+    port: proxy.portHttp,
+    auth: {
+      username: proxy.username || '',
+      password: proxy.password || ''
+    }
+  }));
+
   try {
     const results = await Promise.all(
-      proxies.map(proxy => checkWebsite(proxy, domain))
+      formattedProxies.map(proxy => checkWebsite(proxy, domain))
     );
     res.json(results);
   } catch (err) {
